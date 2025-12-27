@@ -1,0 +1,493 @@
+
+import { Movie, User } from '../types';
+
+export const MOCK_MOVIES: Movie[] = [
+  // --- FILMS ---
+  {
+    id: 'm1',
+    title: 'Inception Protocol',
+    description: 'Dans un futur où les rêves sont piratables, un voleur d\'élite doit implanter une idée dans l\'esprit d\'un PDG corrompu. Une course contre la montre psychédélique commence.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    genre: ['Sci-Fi', 'Action', 'Thriller'],
+    matchPercentage: 98,
+    rating: '16+',
+    duration: '2h 28m',
+    year: 2023,
+    type: 'movie',
+    isCustom: false,
+    recommendationReason: "Parce que vous aimez les puzzles mentaux et les thrillers de Christopher Nolan.",
+    chapters: [
+      { time: 0, title: "L'Introduction du Rêve" },
+      { time: 60, title: "Le Recrutement" },
+      { time: 120, title: "La Première Immersion" },
+      { time: 300, title: "Le Paradoxe de l'Espace" }
+    ]
+  },
+  {
+    id: 'm3',
+    title: 'Velvet Horizon',
+    description: 'Une romance impossible entre deux astronautes en mission vers Mars. L\'isolement spatial teste les limites de leur amour et de leur santé mentale.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    genre: ['Romance', 'Sci-Fi', 'Drama'],
+    matchPercentage: 89,
+    rating: '12+',
+    duration: '2h 10m',
+    year: 2022,
+    type: 'movie',
+    isCustom: false,
+    recommendationReason: "Une exploration poignante de la solitude humaine dans l'immensité du cosmos."
+  },
+  {
+    id: 'm4',
+    title: 'Echoes of Earth',
+    description: 'Un documentaire époustouflant sur les derniers sanctuaires sauvages de la planète, filmé entièrement en 8K par des drones autonomes.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+    genre: ['Documentary', 'Nature'],
+    matchPercentage: 99,
+    rating: 'Tous',
+    duration: '1h 30m',
+    year: 2023,
+    type: 'movie',
+    isCustom: false,
+    recommendationReason: "Pour vous émerveiller devant la beauté brute et fragile de notre monde."
+  },
+  {
+    id: 'm5',
+    title: 'Cyber Heist',
+    description: 'Un groupe de hackers tente de braquer la plus grande banque de données du monde. Mais l\'IA de sécurité a ses propres plans.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1563968743333-044cef80e7c3?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+    genre: ['Crime', 'Action'],
+    matchPercentage: 92,
+    rating: '16+',
+    duration: '1h 45m',
+    year: 2023,
+    type: 'movie',
+    isCustom: false,
+    recommendationReason: "Un concentré d'adrénaline numérique et de suspense high-tech."
+  },
+  {
+    id: 'm6',
+    title: 'Lost Frequency',
+    description: 'Un ingénieur du son capte un signal radio venant du passé. En essayant de répondre, il modifie accidentellement sa propre réalité.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1478737270239-2f02b77ac618?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+    genre: ['Thriller', 'Sci-Fi'],
+    matchPercentage: 88,
+    rating: '12+',
+    duration: '1h 50m',
+    year: 2021,
+    type: 'movie',
+    isCustom: false,
+    recommendationReason: "Si vous aimez les histoires de voyage dans le temps qui manipulent la perception."
+  },
+  {
+    id: 'm7',
+    title: 'Glacier Edge',
+    description: 'Une expédition scientifique au pôle Nord découvre une structure ancienne piégée sous la glace depuis des millions d\'années.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1517210122415-b0c70b2a09bf?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1503756234508-e32369269deb?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    genre: ['Adventure', 'Mystery'],
+    matchPercentage: 91,
+    rating: '12+',
+    duration: '1h 58m',
+    year: 2024,
+    type: 'movie',
+    isCustom: false
+  },
+  {
+    id: 'm8',
+    title: 'The Silent Monk',
+    description: 'Un film d\'arts martiaux contemplatif sur un guerrier qui a juré le silence mais doit reprendre les armes pour protéger son village.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    genre: ['Action', 'Drama', 'Martial Arts'],
+    matchPercentage: 85,
+    rating: '16+',
+    duration: '2h 05m',
+    year: 2023,
+    type: 'movie',
+    isCustom: false
+  },
+  {
+    id: 'm9',
+    title: 'Solaris Drift',
+    description: 'Un équipage de mineurs d\'astéroïdes se retrouve coincé dans une ceinture de radiation inexplorée.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    genre: ['Sci-Fi', 'Suspense'],
+    matchPercentage: 94,
+    rating: '12+',
+    duration: '1h 42m',
+    year: 2024,
+    type: 'movie',
+    isCustom: false
+  },
+  {
+    id: 'm10',
+    title: 'Midnight in Ginza',
+    description: 'Une nuit onirique à Tokyo, suivant les destins croisés de trois étrangers dans un bar de jazz caché.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    genre: ['Drama', 'Metropolitan'],
+    matchPercentage: 87,
+    rating: 'Tous',
+    duration: '1h 35m',
+    year: 2022,
+    type: 'movie',
+    isCustom: false
+  },
+  {
+    id: 'm11',
+    title: 'Iron Velocity',
+    description: 'Une course de formule 1 futuriste où les voitures sont propulsées par fusion nucléaire.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1533130061792-64b345e4a833?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1533130061792-64b345e4a833?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+    genre: ['Action', 'Sport'],
+    matchPercentage: 90,
+    rating: 'Tous',
+    duration: '2h 12m',
+    year: 2024,
+    type: 'movie',
+    isCustom: false
+  },
+  {
+    id: 'm12',
+    title: 'Shadow Architect',
+    description: 'Un thriller d\'espionnage se concentrant sur les architectes qui conçoivent des prisons de haute sécurité.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+    genre: ['Crime', 'Thriller'],
+    matchPercentage: 93,
+    rating: '16+',
+    duration: '2h 02m',
+    year: 2023,
+    type: 'movie',
+    isCustom: false
+  },
+
+  // --- SÉRIES ---
+  {
+    id: 'm2',
+    title: 'Neon Nights',
+    description: 'Une plongée brutale dans les bas-fonds d\'une métropole cyberpunk. Un détective solitaire traque un androïde déviant.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    genre: ['Cyberpunk', 'Crime', 'Drama'],
+    matchPercentage: 95,
+    rating: '18+',
+    duration: '2 Saisons',
+    year: 2024,
+    type: 'series',
+    isCustom: false,
+    recommendationReason: "Idéal pour les fans de Blade Runner et d'esthétique néon-noire.",
+    seasons: [
+      {
+        number: 1,
+        episodes: [
+          {
+            id: 'm2s1e1',
+            number: 1,
+            title: 'Le Signal',
+            description: 'Un premier signal étrange est capté dans le secteur 7.',
+            duration: '45m',
+            videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+            thumbnailUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&q=80'
+          },
+          {
+            id: 'm2s1e2',
+            number: 2,
+            title: 'Traque Nocturne',
+            description: 'Le détective suit la piste jusqu\'au club Neon.',
+            duration: '50m',
+            videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+            thumbnailUrl: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=1600&q=80'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 's1',
+    title: 'Dark Matter Chronicles',
+    description: 'Une équipe scientifique découvre une anomalie dans l\'espace-temps.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    genre: ['Sci-Fi', 'Mystery'],
+    matchPercentage: 94,
+    rating: '12+',
+    duration: '1 Saison',
+    year: 2024,
+    type: 'series',
+    isCustom: false,
+    seasons: [
+      {
+        number: 1,
+        episodes: [
+          {
+            id: 's1s1e1',
+            number: 1,
+            title: 'L\'Anomalie',
+            description: 'La découverte d\'une anomalie gravitationnelle.',
+            duration: '42m',
+            videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+            thumbnailUrl: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 's2',
+    title: 'Urban Legends',
+    description: 'Chaque épisode explore une légende urbaine différente.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+    genre: ['Horror', 'Anthology'],
+    matchPercentage: 87,
+    rating: '18+',
+    duration: '1 Saison',
+    year: 2023,
+    type: 'series',
+    isCustom: false,
+    seasons: [
+      {
+        number: 1,
+        episodes: [
+          {
+            id: 's2s1e1',
+            number: 1,
+            title: 'La Dame Blanche',
+            description: 'Une auto-stoppeuse fantomatique.',
+            duration: '38m',
+            videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+            thumbnailUrl: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=800&q=80'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 's3',
+    title: 'Chef\'s Ritual',
+    description: 'Une série documentaire sur les chefs qui cuisinent dans des endroits extrêmes.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    genre: ['Lifestyle', 'Documentary'],
+    matchPercentage: 82,
+    rating: 'Tous',
+    duration: '3 Saisons',
+    year: 2024,
+    type: 'series',
+    isCustom: false,
+    seasons: [{ number: 1, episodes: [{ id: 's3e1', number: 1, title: 'Cuisine d\'Altitude', description: 'Cuisiner au sommet des Alpes.', duration: '30m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4', thumbnailUrl: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80' }] }]
+  },
+  {
+    id: 's4',
+    title: 'The Algorithmic Mind',
+    description: 'Une fiction spéculative sur une société dirigée entièrement par un algorithme parfait.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+    genre: ['Dystopia', 'Sci-Fi'],
+    matchPercentage: 97,
+    rating: '16+',
+    duration: '1 Saison',
+    year: 2024,
+    type: 'series',
+    isCustom: false,
+    seasons: [{ number: 1, episodes: [{ id: 's4e1', number: 1, title: 'Optimisation', description: 'L\'arrivée de la Version 2.0.', duration: '50m', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4', thumbnailUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80' }] }]
+  },
+
+  // --- MUSIQUE ---
+  {
+    id: 'music1',
+    title: 'Midnight Synthwave',
+    description: 'Un voyage sonore à travers les néons.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    genre: ['Synthwave', 'Electronic'],
+    matchPercentage: 96,
+    rating: 'Tous',
+    duration: '3m 45s',
+    year: 2024,
+    type: 'music',
+    artist: 'Neon Pulse',
+    composer: 'Alex Retro',
+    isCustom: false
+  },
+  {
+    id: 'music2',
+    title: 'Cosmic Dreams',
+    description: 'Ambient spatial pour voyager.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1614149162883-504ce4d13909?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1614149162883-504ce4d13909?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    genre: ['Ambient', 'Space'],
+    matchPercentage: 93,
+    rating: 'Tous',
+    duration: '5m 12s',
+    year: 2024,
+    type: 'music',
+    artist: 'Stellar Waves',
+    composer: 'Luna Sound',
+    isCustom: false
+  },
+  {
+    id: 'music3',
+    title: 'Urban Beats',
+    description: 'Hip-hop instrumental.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+    genre: ['Hip-Hop', 'Instrumental'],
+    matchPercentage: 91,
+    rating: 'Tous',
+    duration: '4m 20s',
+    year: 2023,
+    type: 'music',
+    artist: 'Beat Architect',
+    composer: 'DJ Smooth',
+    isCustom: false
+  },
+  {
+    id: 'music4',
+    title: 'Echoes of Soul',
+    description: 'Néo-soul envoûtante avec des voix célestes.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253361-bee8718a74a2?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1514525253361-bee8718a74a2?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForADollar.mp4',
+    genre: ['Soul', 'R&B'],
+    matchPercentage: 88,
+    rating: 'Tous',
+    duration: '4m 05s',
+    year: 2024,
+    type: 'music',
+    artist: 'Azure Voice',
+    isCustom: false
+  },
+  {
+    id: 'music5',
+    title: 'Rainy Loft',
+    description: 'Lo-fi hip hop pour les sessions de travail pluvieuses.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    genre: ['Lo-fi', 'Focus'],
+    matchPercentage: 95,
+    rating: 'Tous',
+    duration: '2h 00m',
+    year: 2024,
+    type: 'music',
+    artist: 'Quiet Corner',
+    isCustom: false
+  },
+  {
+    id: 'music6',
+    title: 'Techno Core',
+    description: 'Un set techno industriel pour les amateurs de rythmes sombres.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+    genre: ['Techno', 'Industrial'],
+    matchPercentage: 84,
+    rating: '12+',
+    duration: '6m 30s',
+    year: 2023,
+    type: 'music',
+    artist: 'Factory Unit',
+    isCustom: false
+  },
+
+  // --- AUTRES / VARIÉS ---
+  {
+    id: 'm13',
+    title: 'Digital Horizon',
+    description: 'Une plongée dans le monde de la réalité virtuelle extrême.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1592478411213-6153e4ebc07d?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1592478411213-6153e4ebc07d?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    genre: ['Cyber', 'Doku'],
+    matchPercentage: 89,
+    rating: '12+',
+    duration: '1h 10m',
+    year: 2024,
+    type: 'movie',
+    isCustom: false
+  },
+  {
+    id: 'm14',
+    title: 'Silent Sea',
+    description: 'Un explorateur solitaire traverse l\'océan Pacifique sur un radeau high-tech.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1439405326854-014607f694d7?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1439405326854-014607f694d7?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    genre: ['Documentary', 'Adventure'],
+    matchPercentage: 92,
+    rating: 'Tous',
+    duration: '1h 52m',
+    year: 2023,
+    type: 'movie',
+    isCustom: false
+  },
+  {
+    id: 'm15',
+    title: 'The Last Symphony',
+    description: 'Un drame historique sur un compositeur perdant l\'audition pendant sa dernière œuvre.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1520529688554-10c2e3663b4c?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1507838596048-19c6b8eb5521?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+    genre: ['Drama', 'Music'],
+    matchPercentage: 86,
+    rating: 'Tous',
+    duration: '2h 15m',
+    year: 2022,
+    type: 'movie',
+    isCustom: false
+  },
+  {
+    id: 'm20',
+    title: 'Apex Legends: Cinematic',
+    description: 'L\'histoire d\'origine d\'un nouveau héros entrant dans l\'arène la plus meurtrière de la galaxie.',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80',
+    backdropUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1600&q=80',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    genre: ['Animation', 'Action'],
+    matchPercentage: 91,
+    rating: '12+',
+    duration: '15m',
+    year: 2024,
+    type: 'movie',
+    isCustom: false
+  }
+];
+
+export const MOCK_USER: User = {
+  id: 'user_admin',
+  email: 'admin@myflix.com',
+  role: 'admin',
+  subscriptionStatus: 'active',
+  profiles: [
+    { id: 'p1', name: 'Master Studio', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Studio', isKid: false },
+    { id: 'p2', name: 'Auditeur Privé', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', isKid: false },
+  ],
+};
