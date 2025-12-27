@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { set as idbSet, get as idbGet, del as idbDel } from 'idb-keyval';
 import { User, Profile, Movie } from '../types';
 import { MOCK_USER, MOCK_MOVIES } from './mockData';
+import { config } from '../config';
 
 interface Playlist {
   id: string;
@@ -231,13 +232,13 @@ export const useStore = create<AppState>((set, get) => ({
     localStorage.setItem(PLAYLISTS_KEY, JSON.stringify(playlists));
   },
 
-  openaiKey: localStorage.getItem('myflix_openai_key') || import.meta.env.VITE_OPENAI_API_KEY || "sk-proj-DEMO",
+  openaiKey: localStorage.getItem('myflix_openai_key') || import.meta.env.VITE_OPENAI_API_KEY || config.openaiApiKey || "sk-proj-DEMO",
   setOpenaiKey: (key: string) => {
     set({ openaiKey: key });
     localStorage.setItem('myflix_openai_key', key);
   },
 
-  geminiKey: localStorage.getItem('myflix_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || "AIzaSy-DEMO_KEY_REMOVED",
+  geminiKey: localStorage.getItem('myflix_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || config.geminiApiKey || "AIzaSy-DEMO_KEY_REMOVED",
   setGeminiKey: (key: string) => {
     set({ geminiKey: key });
     localStorage.setItem('myflix_gemini_key', key);
