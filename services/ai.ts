@@ -22,10 +22,9 @@ export const callGemini = async (apiKey: string, prompt: string | any[], options
         isJson = false
     } = options;
 
-    // SDK: Exclusive use of process.env.API_KEY as requested
-    // Note: In Vite, process.env.API_KEY might need a shim or be set via VITE_...
+    // SDK: apiKey passed from store (which gets it from localStorage, env, or config)
     const client = new GoogleGenAI({
-        apiKey: (process as any).env.API_KEY || apiKey
+        apiKey: apiKey
     });
 
     console.log(`[Gemini-3] Calling model: ${model} (JSON: ${isJson})`);
