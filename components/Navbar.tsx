@@ -8,11 +8,10 @@ import SettingsModal from './SettingsModal';
 const Navbar: React.FC<{ onSearchClick?: () => void }> = ({ onSearchClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const { isOnline, isInstallable, installApp } = usePWA();
-  const { user, logout, currentProfile } = useStore();
+  const { user, logout, currentProfile, isSettingsOpen, setSettingsOpen } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -79,7 +78,7 @@ const Navbar: React.FC<{ onSearchClick?: () => void }> = ({ onSearchClick }) => 
               <Bell className="w-5 h-5 text-white cursor-pointer hover:text-gray-300 transition" />
 
               <div className="relative group">
-                <Settings className="w-5 h-5 text-white cursor-pointer hover:animate-spin-slow transition" onClick={() => setIsSettingsOpen(true)} />
+                <Settings className="w-5 h-5 text-white cursor-pointer hover:animate-spin-slow transition" onClick={() => setSettingsOpen(true)} />
               </div>
 
               <div className="relative group" onMouseEnter={() => setShowDropdown(true)} onMouseLeave={() => setShowDropdown(false)}>
@@ -146,7 +145,7 @@ const Navbar: React.FC<{ onSearchClick?: () => void }> = ({ onSearchClick }) => 
 
               <div className="mt-auto space-y-4 pt-10 border-t border-white/5">
                 <button
-                  onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }}
+                  onClick={() => { setSettingsOpen(true); setIsMobileMenuOpen(false); }}
                   className="w-full flex items-center justify-between bg-zinc-900/40 hover:bg-zinc-900 p-5 rounded-2xl border border-white/5 transition-all group"
                 >
                   <div className="flex items-center gap-4 text-zinc-400 font-bold uppercase text-[10px] tracking-widest group-hover:text-white transition-colors">
@@ -168,7 +167,7 @@ const Navbar: React.FC<{ onSearchClick?: () => void }> = ({ onSearchClick }) => 
           </div>
         )}
       </nav>
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 };

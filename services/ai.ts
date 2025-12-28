@@ -123,6 +123,9 @@ export const callGemini = async (apiKey: string, prompt: string | any[], options
         return responseText;
     } catch (err: any) {
         console.error("[Gemini-3] Error:", err);
+        if (err.message?.includes("API key not valid") || err.status === 400 || err.message?.includes("400")) {
+            throw new Error("MYFLIX_CONFIG_REQUIRED");
+        }
         throw err;
     }
 };

@@ -17,7 +17,7 @@ const AISearchModal: React.FC<AISearchModalProps> = ({ isOpen, onClose, onOpenIn
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Movie[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const { customContent, geminiKey } = useStore();
+    const { customContent, geminiKey, setSettingsOpen } = useStore();
     const navigate = useNavigate();
     const searchInProgressRef = useRef(false);
 
@@ -53,8 +53,13 @@ const AISearchModal: React.FC<AISearchModalProps> = ({ isOpen, onClose, onOpenIn
                 const ids = response.split(',').map((id: string) => id.trim());
                 const filtered = allMedia.filter(m => ids.includes(m.id));
                 setResults(filtered);
-            } catch (err) {
+            } catch (err: any) {
                 console.error("AI Search Error:", err);
+                if (err.message === "MYFLIX_CONFIG_REQUIRED") {
+                    setSettingsOpen(true);
+                    setQuery(''); // Clear query to stop spinner
+                    alert("Veuillez configurer votre clé API pour la recherche IA.");
+                }
             } finally {
                 setIsSearching(false);
                 searchInProgressRef.current = false;

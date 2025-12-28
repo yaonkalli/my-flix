@@ -16,7 +16,7 @@ import { Movie, MediaType } from '../types';
 import { config } from '../config';
 
 const Studio: React.FC = () => {
-   const { addCustomMedia, customContent, removeCustomMedia, openaiKey, geminiKey, aiProvider } = useStore();
+   const { addCustomMedia, customContent, removeCustomMedia, openaiKey, geminiKey, aiProvider, setSettingsOpen } = useStore();
    const [analyzing, setAnalyzing] = useState(false);
    const [dragActive, setDragActive] = useState(false);
    const [status, setStatus] = useState<string>('');
@@ -255,7 +255,12 @@ const Studio: React.FC = () => {
          setStatus('Master Prêt');
       } catch (err: any) {
          console.error("AI processing error:", err);
-         if (err?.status === 429 || err?.message?.includes('429')) setIsQuotaExceeded(true);
+         if (err.message === "MYFLIX_CONFIG_REQUIRED") {
+             setSettingsOpen(true);
+             alert("Veuillez configurer votre clé API pour utiliser le Studio.");
+         } else if (err?.status === 429 || err?.message?.includes('429')) {
+             setIsQuotaExceeded(true);
+         }
          fallbackMaster(file, extractedCandidates[0]);
       } finally {
          setAnalyzing(false);

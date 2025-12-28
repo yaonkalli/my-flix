@@ -59,6 +59,10 @@ interface AppState {
   setGeminiKey: (key: string) => void;
   aiProvider: 'gemini' | 'openai';
   setAiProvider: (provider: 'gemini' | 'openai') => void;
+
+  // UI State
+  isSettingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
 }
 
 const STORAGE_KEY = 'myflix_v3_content';
@@ -251,5 +255,8 @@ export const useStore = create<AppState>((set, get) => ({
   setAiProvider: (provider: 'gemini' | 'openai') => {
     set({ aiProvider: provider });
     localStorage.setItem('myflix_ai_provider', provider);
-  }
+  },
+
+  isSettingsOpen: false,
+  setSettingsOpen: (open: boolean) => set({ isSettingsOpen: open })
 }));

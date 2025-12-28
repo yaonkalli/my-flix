@@ -14,7 +14,7 @@ const AIChat: React.FC = () => {
     { role: 'assistant', text: 'Salut ! Je suis ton assistant Myflix. Dis-moi ce que tu veux regarder.' }
   ]);
   const [loading, setLoading] = useState(false);
-  const { customContent, openaiKey, geminiKey, aiProvider, activeTrack } = useStore();
+  const { customContent, openaiKey, geminiKey, aiProvider, activeTrack, setSettingsOpen } = useStore();
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -64,10 +64,18 @@ COMPORTEMENT :
       }
     } catch (err: any) {
       console.error("AI Error:", err);
-      setMessages(prev => [...prev, {
-        role: 'error',
-        text: err?.message || "Problème de connexion AI."
-      }]);
+      if (err.message === "MYFLIX_CONFIG_REQUIRED") {
+        setMessages(prev => [...prev, {
+          role: 'error',
+          text: "Clé API manquante ou invalide. Veuillez configurer l'IA."
+        }]);
+        setSettingsOpen(true);
+      } else {
+        setMessages(prev => [...prev, {
+          role: 'error',
+          text: err?.message || "Problème de connexion AI."
+        }]);
+      }
     } finally {
       setLoading(false);
     }
