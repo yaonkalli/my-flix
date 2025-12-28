@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { OpenAI } from 'openai';
 import { callGemini } from '../services/ai';
 import { Movie, MediaType } from '../types';
+// import * as mm from 'music-metadata-browser';
 
 import { config } from '../config';
 
@@ -154,6 +155,10 @@ const Studio: React.FC = () => {
       }
    }
 
+   const extractAudioCover = async (file: File): Promise<string | null> => {
+      return null;
+   }
+
    const processFile = async (file: File) => {
       if (processingRef.current) return;
       processingRef.current = true;
@@ -162,12 +167,20 @@ const Studio: React.FC = () => {
       setCandidates([]);
       setStatus('Analyse Expert...');
 
-      // 1. Extract Frames if video
+      // 1. Extract Frames if video or Cover if audio
       let extractedCandidates: string[] = [];
       if (file.type.startsWith('video/') || file.name.toLowerCase().endsWith('.avi')) {
          setStatus('Détection des moments forts...');
          extractedCandidates = await extractFrames(file, 8);
          setCandidates(extractedCandidates);
+      } else if (file.type.startsWith('audio/')) {
+         setStatus('Analyse Audio...');
+         // Temporarily disabled to fix build/AI issues
+         // const audioCover = await extractAudioCover(file);
+         // if (audioCover) {
+         //    extractedCandidates = [audioCover];
+         //    setCandidates([audioCover]);
+         // }
       }
 
       // Keep track of the current file for rescan
@@ -337,25 +350,28 @@ const Studio: React.FC = () => {
          <Navbar />
          <div className="pt-20 px-4 md:px-12 max-w-[1600px] mx-auto pb-20">
             {/* Clean Netflix-style Header */}
-            <header className="mb-8 pt-6">
-               <div className="flex items-center justify-between">
-                  <div>
-                     <div className="flex items-center gap-3 mb-2">
-                        <Link to="/browse" className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all border border-white/5 group">
-                           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                        </Link>
-                        <h1 className="text-3xl md:text-4xl font-bold italic tracking-tighter">Studio Master</h1>
-                     </div>
-                     <p className="text-sm text-gray-400">Importe et gère ton contenu personnel avec l'IA</p>
-                  </div>
+            <header className="mb-6 md:mb-10 pt-4 md:pt-6">
+               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
-                     <div className="bg-zinc-900/80 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-4 group">
-                        <div className="w-10 h-10 rounded-xl bg-netflix-red/10 flex items-center justify-center text-netflix-red group-hover:scale-110 transition-transform">
-                           <Layers size={20} />
+                     <Link to="/browse" className="w-10 h-10 md:w-12 md:h-12 bg-white/5 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all border border-white/5 active:scale-90">
+                        <ArrowLeft size={20} />
+                     </Link>
+                     <div>
+                        <h1 className="text-2xl md:text-5xl font-black italic tracking-tighter leading-none mb-2">Studio Master</h1>
+                        <p className="text-[10px] md:text-sm text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                           <Zap size={12} className="text-netflix-red" /> IA Creative Suite
+                        </p>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                     <div className="flex-1 md:flex-none bg-zinc-900/50 backdrop-blur-xl rounded-2xl px-5 py-3 border border-white/5 flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-netflix-red/10 flex items-center justify-center text-netflix-red">
+                           <Layers size={16} />
                         </div>
                         <div>
-                           <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-0.5">Bibliothèque</p>
-                           <p className="text-lg font-black text-white leading-none">{customContent.length} <span className="text-[10px] text-zinc-600">MÉDIAS</span></p>
+                           <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Storage</p>
+                           <p className="text-sm font-black text-white">{customContent.length} <span className="text-[8px] text-zinc-700 italic">OFFLINE</span></p>
                         </div>
                      </div>
                   </div>
@@ -363,7 +379,7 @@ const Studio: React.FC = () => {
             </header>
 
             {/* Content Type Selector */}
-            <div className="flex gap-2 mb-8 bg-zinc-900/50 p-1.5 rounded-2xl w-fit border border-white/5">
+            <div className="flex md:inline-flex gap-1 mb-10 bg-black/40 p-1 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
                {[
                   { type: 'movie' as MediaType, label: 'Films', icon: Film },
                   { type: 'series' as MediaType, label: 'Séries', icon: Layers },
@@ -372,12 +388,12 @@ const Studio: React.FC = () => {
                   <button
                      key={type}
                      onClick={() => setSelectedType(type)}
-                     className={`px-8 py-3 rounded-xl text-sm font-black uppercase tracking-tighter transition-all flex items-center gap-3 ${selectedType === type
-                        ? 'bg-white text-black shadow-xl scale-105'
-                        : 'text-zinc-500 hover:text-white'
+                     className={`flex-1 md:flex-none px-6 md:px-10 py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-3 ${selectedType === type
+                        ? 'bg-white text-black shadow-2xl scale-[1.02]'
+                        : 'text-zinc-600 hover:text-white hover:bg-white/5'
                         }`}
                   >
-                     <Icon size={18} />
+                     <Icon size={14} className={selectedType === type ? 'text-netflix-red' : ''} />
                      {label}
                   </button>
                ))}
@@ -390,7 +406,7 @@ const Studio: React.FC = () => {
                      <div
                         className={`relative bg-zinc-900/40 backdrop-blur-3xl rounded-[2.5rem] border-2 border-dashed transition-all duration-700 cursor-pointer group overflow-hidden ${dragActive ? 'border-netflix-red bg-netflix-red/10 scale-[1.02] shadow-[0_0_60px_rgba(229,9,20,0.2)]' : 'border-white/5 hover:border-white/20 hover:bg-white/5'
                            }`}
-                        style={{ minHeight: '500px' }}
+                        style={{ minHeight: window.innerWidth < 768 ? '350px' : '500px' }}
                         onDragOver={handleDrag}
                         onDragLeave={handleDrag}
                         onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }}
@@ -422,16 +438,16 @@ const Studio: React.FC = () => {
                         </div>
                      </div>
                   ) : (
-                     <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-[2.5rem] p-10 border border-white/5 shadow-[0_50px_100px_rgba(0,0,0,0.5)] animate-slide-up relative overflow-hidden group">
+                     <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-[2.5rem] p-6 md:p-10 border border-white/5 shadow-[0_50px_100px_rgba(0,0,0,0.5)] animate-slide-up relative overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
                         <div className="relative z-10">
-                           <div className="flex items-center justify-between mb-10">
-                              <h3 className="text-2xl font-black italic tracking-tighter">Mastering Métadonnées</h3>
+                           <div className="flex items-center justify-between mb-8">
+                              <h3 className="text-xl md:text-2xl font-black italic tracking-tighter">Mastering Métadonnées</h3>
                               <button
                                  onClick={() => setPendingMedia(null)}
-                                 className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                                 className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/10 transition-all border border-white/5"
                               >
-                                 <X size={24} />
+                                 <X size={20} />
                               </button>
                            </div>
 
@@ -601,13 +617,13 @@ const Studio: React.FC = () => {
                         </div>
 
                         {/* Cover Selection System */}
-                        <div className="bg-zinc-900 rounded-[2.5rem] p-10 border border-zinc-800 shadow-2xl">
-                           <div className="flex items-center justify-between mb-10">
+                        <div className="bg-zinc-900 rounded-[2.5rem] p-6 md:p-10 border border-zinc-800 shadow-2xl">
+                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                               <div>
                                  <h3 className="text-2xl font-black italic tracking-tighter mb-1">Système de Cover Intelligent</h3>
                                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Sélectionnez le meilleur visuel pour votre bibliothèque</p>
                               </div>
-                              <div className="flex gap-4">
+                              <div className="flex flex-wrap gap-2 md:gap-4">
                                  <input
                                     type="file"
                                     id="custom-cover"
@@ -623,29 +639,29 @@ const Studio: React.FC = () => {
                                  />
                                  <button
                                     onClick={() => document.getElementById('custom-cover')?.click()}
-                                    className="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-black uppercase tracking-widest py-3 px-6 rounded-2xl transition-all flex items-center gap-3 border border-white/5 active:scale-95"
+                                    className="flex-1 md:flex-none bg-zinc-800 hover:bg-zinc-700 text-white text-[9px] font-black uppercase tracking-widest py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5 active:scale-95"
                                  >
-                                    <Upload size={14} /> Upload Manuel
+                                    <Upload size={14} /> Upload
                                  </button>
                                  <button
                                     onClick={handleRescan}
-                                    className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[10px] font-black uppercase tracking-widest py-3 px-6 rounded-2xl transition-all flex items-center gap-3 border border-white/5 active:scale-95"
+                                    className="flex-1 md:flex-none bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[9px] font-black uppercase tracking-widest py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5 active:scale-95"
                                  >
-                                    <Camera size={14} /> Scanner Auto
+                                    <Camera size={14} /> Scan
                                  </button>
                                  <button
                                     onClick={() => pickBestCoverWithAI()}
                                     disabled={status.includes('IA')}
-                                    className="bg-white text-black hover:bg-netflix-red hover:text-white text-[10px] font-black uppercase tracking-widest py-3 px-6 rounded-2xl transition-all flex items-center gap-3 shadow-2xl active:scale-95 disabled:opacity-50"
+                                    className="w-full md:w-auto bg-white text-black hover:bg-netflix-red hover:text-white text-[10px] font-black uppercase tracking-widest py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95 disabled:opacity-50"
                                  >
                                     <Sparkles size={14} className={status.includes('IA') ? 'animate-spin' : ''} />
-                                    {status.includes('IA') ? 'Analyse...' : 'Suggestion IA'}
+                                    {status.includes('IA') ? 'Analyse IA...' : 'Suggestion IA'}
                                  </button>
                               </div>
                            </div>
 
                            {candidates.length > 0 ? (
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                                  {candidates.map((img, i) => (
                                     <div
                                        key={i}
@@ -654,11 +670,11 @@ const Studio: React.FC = () => {
                                     >
                                        <img src={img} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={`Frame ${i}`} />
                                        <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${pendingMedia.thumbnailUrl === img ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-500 ${pendingMedia.thumbnailUrl === img ? 'bg-netflix-red scale-110' : 'bg-white/20 backdrop-blur-md rotate-12 group-hover:rotate-0'}`}>
-                                             <Sparkles size={20} className="text-white" />
+                                          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-transform duration-500 shadow-2xl ${pendingMedia.thumbnailUrl === img ? 'bg-netflix-red scale-110' : 'bg-white/20 backdrop-blur-md rotate-12 group-hover:rotate-0'}`}>
+                                             <Sparkles size={18} className="text-white" />
                                           </div>
                                        </div>
-                                       <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/80 backdrop-blur-xl rounded-lg text-[10px] font-black uppercase tracking-tighter text-white/70">
+                                       <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 px-2 md:px-3 py-1 bg-black/80 backdrop-blur-xl rounded-lg text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/70">
                                           Capture #{i + 1}
                                        </div>
                                     </div>

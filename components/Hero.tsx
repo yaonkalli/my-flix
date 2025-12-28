@@ -55,68 +55,68 @@ const Hero: React.FC<HeroProps> = ({ movie, variant = 'cinema', onOpenModal }) =
       </div>
 
       {/* Content Layer */}
-      <div className="absolute inset-0 flex flex-col justify-end px-6 md:px-16 z-20 pointer-events-none pb-8 md:pb-16 pt-32">
-        <div className="max-w-4xl space-y-4 md:space-y-6 animate-fade-in pointer-events-auto">
+      <div className="absolute inset-0 flex flex-col justify-end px-6 md:px-16 z-20 pointer-events-none pb-12 md:pb-20 pt-32">
+        <div className="max-w-4xl space-y-6 md:space-y-8 animate-fade-in pointer-events-auto">
 
           {movie.recommendationReason && (
-            <div className="flex items-center gap-3 bg-white/5 backdrop-blur-2xl border border-white/10 px-6 py-2.5 rounded-2xl w-fit animate-fade-in-down shadow-[0_20px_50px_rgba(0,0,0,0.5)] group/reco border-l-netflix-red border-l-2">
-              <div className="relative">
-                <Sparkles size={18} className="text-netflix-red animate-pulse" />
-                <div className="absolute inset-0 bg-netflix-red blur-xl opacity-20 scale-150 animate-pulse" />
-              </div>
-              <p className="text-white/90 text-[13px] md:text-sm font-black italic tracking-tight uppercase">
+            <div className="flex items-center gap-3 bg-white/5 backdrop-blur-3xl border border-white/10 px-5 py-2 rounded-full w-fit animate-fade-in-down shadow-2xl border-l-netflix-red border-l-2">
+              <Sparkles size={14} className="text-netflix-red" />
+              <p className="text-white/80 text-[10px] md:text-xs font-black uppercase tracking-widest">
                 {movie.recommendationReason}
               </p>
             </div>
           )}
 
-          {/* Title - Reduced size for better fitting */}
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white uppercase leading-[0.9] tracking-tight drop-shadow-2xl">
+          {/* Title - Refined for better mobile fit */}
+          <h1 className="text-3xl md:text-6xl lg:text-7xl font-black text-white uppercase italic leading-[0.85] tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
             {movie.title}
           </h1>
 
           {/* Metadata Row */}
-          <div className="flex items-center gap-4 text-sm md:text-lg font-medium text-white shadow-black drop-shadow-md">
-            <span className="text-[#46d369] font-bold">{movie.matchPercentage}% recommandé</span>
-            <span className="text-gray-300">{movie.year}</span>
-            <span className="border border-gray-400 px-2 py-0.5 text-xs rounded-sm bg-black/20 backdrop-blur-sm uppercase">{movie.rating}</span>
-            <span className="text-gray-300">{movie.duration}</span>
+          <div className="flex flex-wrap items-center gap-3 md:gap-5 text-[11px] md:text-lg font-bold text-white/70">
+            <span className="text-[#46d369]">{movie.matchPercentage}% Adoré</span>
+            <span className="w-1 h-1 bg-white/20 rounded-full" />
+            <span>{movie.year}</span>
+            <span className="w-1 h-1 bg-white/20 rounded-full" />
+            <span className="border border-white/20 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest">{movie.rating}</span>
+            <span className="w-1 h-1 bg-white/20 rounded-full" />
+            <span>{movie.duration}</span>
           </div>
 
           {/* Description */}
-          <p className="hidden md:block text-base md:text-xl text-white shadow-black drop-shadow-md line-clamp-2 font-medium max-w-2xl">
+          <p className="hidden md:block text-xl text-white/60 line-clamp-2 font-medium max-w-2xl leading-relaxed">
             {movie.description}
           </p>
 
-          {/* Buttons */}
-          <div className="flex flex-wrap items-center gap-4 pt-4">
+          {/* Buttons - Round Full & Minimalist */}
+          <div className="flex flex-wrap items-center gap-3 pt-6">
             <button
               onClick={() => navigate(`/watch/${movie.id}`)}
-              className="bg-white text-black px-8 py-3 md:px-10 md:py-4 rounded md:rounded-md font-bold text-lg flex items-center gap-3 hover:bg-white/90 transition-all active:scale-95 shadow-xl"
+              className="bg-white text-black px-8 py-3.5 md:px-12 md:py-5 rounded-full font-black text-xs md:text-lg uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-all active:scale-95 shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
             >
-              <Play className="w-6 h-6 fill-black" /> Lecture
+              <Play className="w-4 h-4 md:w-6 md:h-6 fill-black" /> Lecture
             </button>
 
             <button
               onClick={() => onOpenModal && onOpenModal(movie)}
-              className="bg-[gray]/40 text-white px-8 py-3 md:px-10 md:py-4 rounded md:rounded-md font-bold text-lg flex items-center gap-3 hover:bg-[gray]/50 transition-all backdrop-blur-md"
+              className="bg-white/10 text-white px-8 py-3.5 md:px-12 md:py-5 rounded-full font-black text-xs md:text-lg uppercase tracking-widest flex items-center gap-3 hover:bg-white/20 transition-all backdrop-blur-xl border border-white/10 active:scale-95 shadow-2xl"
             >
-              <Info className="w-6 h-6" /> Plus d'infos
+              <Info className="w-4 h-4 md:w-6 md:h-6" /> Détails
             </button>
           </div>
         </div>
       </div>
 
-      {/* Side Audio Control */}
+      {/* Minimalist Audio Control */}
       {showVideo && (
-        <div className="absolute right-0 bottom-[30%] md:bottom-[25%] flex items-center z-30">
+        <div className="absolute right-6 bottom-32 md:right-16 md:bottom-24 flex items-center z-30 animate-fade-in">
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className="p-3 border-l hover:border-l-2 border-white/50 bg-black/10 hover:bg-black/30 backdrop-blur-sm text-white transition-all pr-12 pl-4 rounded-l-full"
+            className="w-10 h-10 md:w-14 md:h-14 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-3xl text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90 shadow-2xl group"
           >
-            {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+            {isMuted ? <VolumeX size={18} className="md:w-6 md:h-6" /> : <Volume2 size={18} className="md:w-6 md:h-6" />}
+            <div className="absolute inset-0 rounded-full bg-white/5 scale-0 group-hover:scale-100 transition-transform duration-500" />
           </button>
-          <div className="w-24 h-1 bg-white/20 absolute right-0 bottom-0" />
         </div>
       )}
     </div>
