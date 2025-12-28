@@ -1,5 +1,6 @@
 
-// Configuration globale de l'application
+// [AI UPDATE] Configuration globale de l'application
+// Modifié pour garantir la connexion AI (Gemini/OpenAI)
 // Alternative au fichier .env pour éviter les problèmes de chargement
 
 export const config = {

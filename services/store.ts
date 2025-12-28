@@ -1,4 +1,7 @@
 
+// [AI UPDATE] Gestion d'état global
+// Connecté au fichier de configuration pour les clés API
+
 import { create } from 'zustand';
 import { set as idbSet, get as idbGet, del as idbDel } from 'idb-keyval';
 import { User, Profile, Movie } from '../types';
