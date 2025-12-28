@@ -1,4 +1,7 @@
 
+// [AI UPDATE] Page Studio - Intégration IA Avancée
+// Utilisation de Gemini 2.0 Flash pour l'analyse visuelle et métadonnées
+
 import React, { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import {

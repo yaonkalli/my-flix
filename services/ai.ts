@@ -1,4 +1,8 @@
 
+// [AI UPDATE] Service AI Client-Side
+// Compatible avec les nouvelles spécifications Google GenAI SDK
+// Gère l'envoi mixte (Texte + Images) et le nettoyage JSON
+
 import { GoogleGenAI } from '@google/genai';
 
 export interface GeminiOptions {
