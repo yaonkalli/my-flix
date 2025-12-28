@@ -135,10 +135,11 @@ const Studio: React.FC = () => {
             const imageParts = currentCandidates.map(base64 => ({
                inlineData: { data: base64.split(',')[1], mimeType: "image/jpeg" }
             }));
+            // Pass parts directly. callGemini is now smart enough to wrap them in a User Content object.
             const text = await callGemini(geminiKey || '', [
                ...imageParts,
                "Analyze these images. Return ONLY a JSON: { \"bestIndex\": number } for the best cinematic frame. No markdown."
-            ], { model: "gemini-3-flash-preview", isJson: true });
+            ], { model: "gemini-2.0-flash", isJson: true }); // Updated model name to stable version
 
             const data = JSON.parse(text);
             const bestIndex = (typeof data.bestIndex === 'number') ? data.bestIndex : 0;
@@ -214,7 +215,7 @@ const Studio: React.FC = () => {
             if (extractedCandidates.length > 0) {
                promptParts.push(...extractedCandidates.slice(0, 4).map(b => ({ inlineData: { data: b.split(',')[1], mimeType: "image/jpeg" } })));
             }
-            const text = await callGemini(geminiKey || '', promptParts, { model: "gemini-3-pro-preview", isJson: true });
+            const text = await callGemini(geminiKey || '', promptParts, { model: "gemini-2.0-flash", isJson: true }); // Updated model name to stable version
             data = JSON.parse(text);
          }
 
