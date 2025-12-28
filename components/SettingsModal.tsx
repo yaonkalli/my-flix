@@ -70,7 +70,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 const responseText = (result as any).text ? (result as any).text : (result as any).candidates?.[0]?.content?.parts?.[0]?.text;
                 if (responseText) {
                     setTestStatus('success');
-                    setTestMessage(`✓ Gemini 3 Flash Établi`);
+                    setTestMessage(`✓ Gemini 2.0 Flash Établi`);
                 }
             }
         } catch (err: any) {
