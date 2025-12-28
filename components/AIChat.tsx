@@ -42,7 +42,7 @@ const AIChat: React.FC = () => {
       } else {
         // Protocole Gemini: Flash pour réponses rapides
         const text = await callGemini(geminiKey, userMsg, {
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-2.0-flash',
           systemInstruction: `IDENTITÉ : Tu es le Concierge Myflix, assistant IA premium spécialisé dans les recommandations de contenu.
 
 BIBLIOTHÈQUE DISPONIBLE : ${customContent.map(m => `"${m.title}" (${m.type})`).join(', ') || 'Aucun contenu pour le moment'}.

@@ -49,7 +49,7 @@ const AISearchModal: React.FC<AISearchModalProps> = ({ isOpen, onClose, onOpenIn
         Exemple: p1, p2, p3
         Si aucun ne correspond, retourne une chaîne vide.`;
 
-                const response = await callGemini(geminiKey, prompt, { model: 'gemini-3-flash-preview' });
+                const response = await callGemini(geminiKey, prompt, { model: 'gemini-2.0-flash' });
                 const ids = response.split(',').map((id: string) => id.trim());
                 const filtered = allMedia.filter(m => ids.includes(m.id));
                 setResults(filtered);

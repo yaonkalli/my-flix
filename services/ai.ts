@@ -20,7 +20,7 @@ export interface GeminiOptions {
  */
 export const callGemini = async (apiKey: string, prompt: string | any[], options: GeminiOptions = {}) => {
     const {
-        model = 'gemini-3-flash-preview',
+        model = 'gemini-2.0-flash',
         systemInstruction,
         temperature = 0.7,
         isJson = false
