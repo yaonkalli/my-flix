@@ -64,7 +64,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 const { GoogleGenAI } = await import('@google/genai');
                 const client = new GoogleGenAI({ apiKey: tempGemini });
                 const result = await client.models.generateContent({
-                    model: "gemini-3-flash-preview",
+                    model: "gemini-2.0-flash",
                     contents: [{ role: 'user', parts: [{ text: "Hello" }] }]
                 } as any);
                 const responseText = (result as any).text ? (result as any).text : (result as any).candidates?.[0]?.content?.parts?.[0]?.text;
