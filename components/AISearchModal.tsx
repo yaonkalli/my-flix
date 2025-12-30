@@ -4,7 +4,7 @@ import { Search, X, Sparkles, Play, Info, Loader2 } from 'lucide-react';
 import { Movie } from '../types';
 import { useStore } from '../services/store';
 import { MOCK_MOVIES } from '../services/mockData';
-import { callGemini } from '../services/ai';
+import { generateJSON, AIError } from '../services/ai';
 import { useNavigate } from 'react-router-dom';
 
 interface AISearchModalProps {
@@ -31,11 +31,7 @@ const AISearchModal: React.FC<AISearchModalProps> = ({ isOpen, onClose, onOpenIn
         }
 
         const timer = setTimeout(async () => {
-            // Protection anti-spam: ignorer si une recherche est déjà en cours
-            if (searchInProgressRef.current) {
-                console.log('Recherche déjà en cours, requête ignorée');
-                return;
-            }
+            if (searchInProgressRef.current) return;
 
             searchInProgressRef.current = true;
             setIsSearching(true);
@@ -45,26 +41,35 @@ const AISearchModal: React.FC<AISearchModalProps> = ({ isOpen, onClose, onOpenIn
                 const prompt = `L'utilisateur cherche : "${query}".
         Voici le catalogue Myflix : ${JSON.stringify(catalog)}.
         Analyse la recherche sémantiquement (ambiance, thèmes, mots-clés).
-        Retourne UNIQUEMENT une liste d'IDs des 5 meilleurs résultats par pertinence, séparés par des virgules.
-        Exemple: p1, p2, p3
-        Si aucun ne correspond, retourne une chaîne vide.`;
+        Retourne UNIQUEMENT un JSON contenant une liste d'IDs des 5 meilleurs résultats par pertinence.
+        Schema: { "ids": ["id1", "id2"] }
+        Si aucun ne correspond, liste vide.`;
 
-                const response = await callGemini(geminiKey, prompt, { model: 'gemini-2.0-flash' });
-                const ids = response.split(',').map((id: string) => id.trim());
+                const data = await generateJSON(geminiKey, prompt);
+
+                let ids: string[] = [];
+                if (data.ids && Array.isArray(data.ids)) {
+                    ids = data.ids;
+                } else if (typeof data === 'object') {
+                    // Try to find any array
+                    const possibleArray = Object.values(data).find(v => Array.isArray(v));
+                    if (possibleArray) ids = possibleArray as string[];
+                }
+
                 const filtered = allMedia.filter(m => ids.includes(m.id));
                 setResults(filtered);
             } catch (err: any) {
                 console.error("AI Search Error:", err);
-                if (err.message === "MYFLIX_CONFIG_REQUIRED") {
+                if (err instanceof AIError && err.code === "MYFLIX_CONFIG_REQUIRED") {
                     setSettingsOpen(true);
-                    setQuery(''); // Clear query to stop spinner
+                    setQuery('');
                     alert("Veuillez configurer votre clé API pour la recherche IA.");
                 }
             } finally {
                 setIsSearching(false);
                 searchInProgressRef.current = false;
             }
-        }, 1000); // Augmenté à 1000ms pour réduire le spam
+        }, 1000);
 
         return () => clearTimeout(timer);
     }, [query, allMedia, geminiKey]);

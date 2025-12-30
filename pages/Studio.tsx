@@ -1,22 +1,19 @@
 
-// [AI UPDATE] Page Studio - Intégration IA Avancée
-// Utilisation de Gemini 2.0 Flash pour l'analyse visuelle et métadonnées
+// [AI UPDATE] Page Studio - Intégration IA Avancée (Refactorisé)
+// Utilisation du nouveau service unifié analyzeMedia
 
 import React, { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import {
-   Sparkles, Trash2, Loader2, Upload, X, Music, Film, RefreshCcw, ArrowRight, AlertTriangle, Edit3, Layers, Zap, User, Mic2, ArrowLeft, Camera
+   Sparkles, Trash2, Loader2, Upload, X, Music, Film, RefreshCcw, ArrowRight, AlertTriangle, Layers, Zap, Camera
 } from 'lucide-react';
 import { useStore } from '../services/store';
 import { Link } from 'react-router-dom';
-import { OpenAI } from 'openai';
-import { callGemini } from '../services/ai';
+import { analyzeMedia, generateJSON, AIError } from '../services/ai';
 import { Movie, MediaType } from '../types';
 
-import { config } from '../config';
-
 const Studio: React.FC = () => {
-   const { addCustomMedia, customContent, removeCustomMedia, openaiKey, geminiKey, aiProvider, setSettingsOpen } = useStore();
+   const { addCustomMedia, customContent, removeCustomMedia, geminiKey, setSettingsOpen } = useStore();
    const [analyzing, setAnalyzing] = useState(false);
    const [dragActive, setDragActive] = useState(false);
    const [status, setStatus] = useState<string>('');
@@ -27,13 +24,6 @@ const Studio: React.FC = () => {
    const fileInputRef = useRef<HTMLInputElement>(null);
    const processingRef = useRef(false);
    const aiSelectionInProgressRef = useRef(false);
-
-   const getAIInstance = () => {
-      if (aiProvider === 'openai') {
-         return openaiKey ? new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true, maxRetries: 0 }) : null;
-      }
-      return null;
-   };
 
    const handleDrag = (e: React.DragEvent) => {
       e.preventDefault();
@@ -53,7 +43,6 @@ const Studio: React.FC = () => {
 
          video.onloadedmetadata = async () => {
             const duration = video.duration;
-            // Capture frames at specific intervals: 10%, 20%... 80%
             const timestamps = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8].map(p => p * duration);
 
             for (const time of timestamps) {
@@ -88,67 +77,20 @@ const Studio: React.FC = () => {
 
    const pickBestCoverWithAI = async (currentCandidates: string[] = candidates) => {
       if (!currentCandidates.length) return;
-
-      // Protection anti-spam: ignorer si une sélection IA est déjà en cours
-      if (aiSelectionInProgressRef.current) {
-         console.log('Sélection IA déjà en cours, requête ignorée');
-         return;
-      }
+      if (aiSelectionInProgressRef.current) return;
 
       aiSelectionInProgressRef.current = true;
       setStatus('Analyse IA Best Shot...');
-      const hasAI = aiProvider === 'openai' ? !!openaiKey : !!geminiKey;
-      if (!hasAI) {
-         aiSelectionInProgressRef.current = false;
-         return;
-      }
-
-      const ai = getAIInstance();
 
       try {
-         if (aiProvider === 'openai' && ai instanceof OpenAI) {
-            const response = await ai.chat.completions.create({
-               model: "gpt-4o-mini",
-               messages: [
-                  {
-                     role: "system",
-                     content: "Analyze these frames from a video. Pick the single most iconic, sharp, and high-quality frame to use as a movie poster. Avoid blurry or generic frames. Return ONLY a JSON object: { \"bestIndex\": number }."
-                  },
-                  {
-                     role: "user",
-                     content: [
-                        ...currentCandidates.map((base64, idx) => ({
-                           type: "image_url" as const,
-                           image_url: { url: base64, detail: "low" as const }
-                        })),
-                        { type: "text", text: "Which frame index (0-7) is the best cinematic cover?" }
-                     ]
-                  }
-               ],
-               response_format: { type: "json_object" }
-            });
+         const prompt = "Analyze these images. Return ONLY a JSON: { \"bestIndex\": number } for the best cinematic frame. No markdown.";
 
-            const data = JSON.parse(response.choices[0].message.content || '{"bestIndex": 0}');
-            const bestIndex = (typeof data.bestIndex === 'number') ? data.bestIndex : 0;
-            if (currentCandidates[bestIndex]) {
-               setPendingMedia(prev => prev ? ({ ...prev, thumbnailUrl: currentCandidates[bestIndex], backdropUrl: currentCandidates[bestIndex] }) : prev);
-            }
-         } else {
-            console.log("Studio Gemini Selection triggered");
-            const imageParts = currentCandidates.map(base64 => ({
-               inlineData: { data: base64.split(',')[1], mimeType: "image/jpeg" }
-            }));
-            // Pass parts directly. callGemini is now smart enough to wrap them in a User Content object.
-            const text = await callGemini(geminiKey || '', [
-               ...imageParts,
-               "Analyze these images. Return ONLY a JSON: { \"bestIndex\": number } for the best cinematic frame. No markdown."
-            ], { model: "gemini-2.0-flash", isJson: true }); // Updated model name to stable version
+         // Use analyzeMedia which supports images
+         const data = await analyzeMedia(geminiKey, prompt, currentCandidates);
 
-            const data = JSON.parse(text);
-            const bestIndex = (typeof data.bestIndex === 'number') ? data.bestIndex : 0;
-            if (currentCandidates[bestIndex]) {
-               setPendingMedia(prev => prev ? ({ ...prev, thumbnailUrl: currentCandidates[bestIndex], backdropUrl: currentCandidates[bestIndex] }) : prev);
-            }
+         const bestIndex = (typeof data?.bestIndex === 'number') ? data.bestIndex : 0;
+         if (currentCandidates[bestIndex]) {
+            setPendingMedia(prev => prev ? ({ ...prev, thumbnailUrl: currentCandidates[bestIndex], backdropUrl: currentCandidates[bestIndex] }) : prev);
          }
       } catch (err) {
          console.error("AI Selection failed", err);
@@ -174,53 +116,23 @@ const Studio: React.FC = () => {
          setCandidates(extractedCandidates);
       }
 
-      // Keep track of the current file for rescan
       (window as any)._currentStudioFile = file;
-      const hasAI = aiProvider === 'openai' ? !!openaiKey : !!geminiKey;
-
-      if (!hasAI) {
-         fallbackMaster(file, extractedCandidates[0] || '');
-         return;
-      }
-
-      const ai = getAIInstance();
 
       try {
-         let data: any = {};
-         if (aiProvider === 'openai' && ai instanceof OpenAI) {
-            const response = await ai.chat.completions.create({
-               model: "gpt-4o-mini",
-               messages: [
-                  {
-                     role: "system",
-                     content: "Tu es un expert en cinéma. Analyse le média et retourne un JSON détaillé EN FRANÇAIS. IMPORTANT: Si tu ne reconnais pas ce contenu comme une œuvre publique commerciale, décris uniquement ce que tu vois de manière factuelle sans inventer de métadonnées (acteurs, pitch fictionnel). Champ 'type': 'movie', 'series', 'music'. Champ 'rating': '16+', 'Tous', '12+'. Ajoute 'recommendationReason' (phrase commençant par 'Parce que vous aimez...'). Si film/musique, ajoute 'chapters' [{time_en_secondes, title}]. Si série, ajoute 'seasons' [{number, episodes: [{number, title, description, duration, chapters: [{time, title}]}]}]"
-                  },
-                  {
-                     role: "user", content: [
-                        { type: "text", text: `Fichier: ${file.name}. Retourne JSON: {title, artist, year, genre, rating, type, posterQuery, backdropQuery, description, recommendationReason, chapters, seasons}` },
-                        ...extractedCandidates.slice(0, 4).map(b => ({ type: "image_url" as const, image_url: { url: b, detail: "low" as const } }))
-                     ]
-                  }
-               ],
-               response_format: { type: "json_object" }
-            });
-            data = JSON.parse(response.choices[0].message.content || '{}');
-         } else {
-            console.log("Studio Gemini Metadata Analysis triggered");
-            const promptParts: any[] = [`Tu es un expert en cinéma. Analyse "${file.name}". 
+         const prompt = `Tu es un expert en cinéma. Analyse "${file.name}".
             IMPORTANT: Si tu ne reconnais pas ce contenu comme une œuvre commerciale publique (film, série, musique connue), décris UNIQUEMENT ce que tu vois visuellement de manière factuelle. N'invente jamais d'acteurs, de réalisateurs ou d'années si c'est un contenu personnel. 
             Réponds EN FRANÇAIS. 
             Si c'est un contenu privé, utilise 'type': 'movie' par défaut et 'genre': ['Privé'].
             Si œuvre connue: Classifie 'movie', 'series', 'music' et ajoute 'recommendationReason'.
             Si film/musique, génère 'chapters' [{time (secondes), title}]. 
             Si série, génère 'seasons' [{number, episodes: [{number, title, description, duration, chapters: [{time, title}]}]}].
-            Retourne UNIQUEMENT un JSON: {title, artist, year, genre, rating, type, posterQuery, backdropQuery, description, recommendationReason, chapters, seasons}. Pas de markdown.`];
-            if (extractedCandidates.length > 0) {
-               promptParts.push(...extractedCandidates.slice(0, 4).map(b => ({ inlineData: { data: b.split(',')[1], mimeType: "image/jpeg" } })));
-            }
-            const text = await callGemini(geminiKey || '', promptParts, { model: "gemini-2.0-flash", isJson: true }); // Updated model name to stable version
-            data = JSON.parse(text);
-         }
+            Retourne UNIQUEMENT un JSON: {title, artist, year, genre, rating, type, posterQuery, backdropQuery, description, recommendationReason, chapters, seasons}. Pas de markdown.`;
+
+         // Use the multimodal service
+         const imagesToAnalyze = extractedCandidates.slice(0, 4);
+         const data = await analyzeMedia(geminiKey, prompt, imagesToAnalyze);
+
+         if (!data) throw new Error("Analyse échouée");
 
          const salt = Math.random().toString(36).substring(7);
          const getUnsplash = (q: string, s: string) => `https://images.unsplash.com/featured/${s}?${encodeURIComponent(q || 'cinema')},${salt}`;
@@ -246,8 +158,6 @@ const Studio: React.FC = () => {
             seasons: data.seasons
          });
 
-         // If we have candidates, let's auto-pick the best one in the background
-         // Augmenté le délai pour éviter le spam de requêtes
          if (extractedCandidates.length > 0) {
             setTimeout(() => pickBestCoverWithAI(extractedCandidates), 800);
          }
@@ -255,10 +165,10 @@ const Studio: React.FC = () => {
          setStatus('Master Prêt');
       } catch (err: any) {
          console.error("AI processing error:", err);
-         if (err.message === "MYFLIX_CONFIG_REQUIRED") {
+         if (err instanceof AIError && err.code === "MYFLIX_CONFIG_REQUIRED") {
              setSettingsOpen(true);
              alert("Veuillez configurer votre clé API pour utiliser le Studio.");
-         } else if (err?.status === 429 || err?.message?.includes('429')) {
+         } else if (err?.message?.includes('429')) {
              setIsQuotaExceeded(true);
          }
          fallbackMaster(file, extractedCandidates[0]);
@@ -301,7 +211,6 @@ const Studio: React.FC = () => {
       if (!file) return;
 
       setStatus('Nouveau Scan Aléatoire...');
-      // Use random offsets for rescan
       const duration = await new Promise<number>((res) => {
          const v = document.createElement('video');
          v.src = URL.createObjectURL(file);
@@ -335,7 +244,6 @@ const Studio: React.FC = () => {
 
       setCandidates(newFrames);
       setStatus('Nouveau Master prêt');
-      // Auto-repick
       pickBestCoverWithAI(newFrames);
    };
 

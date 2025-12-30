@@ -20,7 +20,7 @@ interface AppState {
   currentProfile: Profile | null;
   myList: string[];
   viewHistory: string[];
-  viewProgress: Record<string, { time: number; duration: number }>; // Mapping: profileId_movieId -> {time, duration}
+  viewProgress: Record<string, { time: number; duration: number }>;
   customContent: Movie[];
   isAuthenticated: boolean;
   playlists: Playlist[];
@@ -53,12 +53,9 @@ interface AppState {
   addToPlaylist: (playlistId: string, trackId: string) => void;
   removeFromPlaylist: (playlistId: string, trackId: string) => void;
 
-  openaiKey: string;
-  setOpenaiKey: (key: string) => void;
+  // AI State - Gemini Only
   geminiKey: string;
   setGeminiKey: (key: string) => void;
-  aiProvider: 'gemini' | 'openai';
-  setAiProvider: (provider: 'gemini' | 'openai') => void;
 
   // UI State
   isSettingsOpen: boolean;
@@ -68,7 +65,6 @@ interface AppState {
 const STORAGE_KEY = 'myflix_v3_content';
 const PROFILES_KEY = 'myflix_v3_profiles';
 
-// Charger les profils depuis le local storage ou utiliser les mocks par défaut
 const savedProfiles = JSON.parse(localStorage.getItem(PROFILES_KEY) || 'null');
 const initialUser: User = {
   ...MOCK_USER,
@@ -86,7 +82,7 @@ export const useStore = create<AppState>((set, get) => ({
   viewHistory: JSON.parse(localStorage.getItem('myflix_history') || '[]'),
   viewProgress: JSON.parse(localStorage.getItem('myflix_progress') || '{}'),
   customContent: JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || [],
-  isAuthenticated: true, // Toujours vrai
+  isAuthenticated: true,
   activeTrack: null,
   isPlaying: false,
 
@@ -200,7 +196,6 @@ export const useStore = create<AppState>((set, get) => ({
   setActiveTrack: (track: Movie | null) => set({ activeTrack: track, isPlaying: !!track }),
   setIsPlaying: (playing: boolean) => set({ isPlaying: playing }),
 
-  // Playlist Management
   createPlaylist: (name: string) => {
     const newPlaylist = {
       id: `playlist_${Date.now()}`,
@@ -239,22 +234,10 @@ export const useStore = create<AppState>((set, get) => ({
     localStorage.setItem(PLAYLISTS_KEY, JSON.stringify(playlists));
   },
 
-  openaiKey: localStorage.getItem('myflix_openai_key') || import.meta.env.VITE_OPENAI_API_KEY || config.openaiApiKey || "sk-proj-DEMO",
-  setOpenaiKey: (key: string) => {
-    set({ openaiKey: key });
-    localStorage.setItem('myflix_openai_key', key);
-  },
-
-  geminiKey: localStorage.getItem('myflix_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || config.geminiApiKey || "AIzaSy-DEMO_KEY_REMOVED",
+  geminiKey: localStorage.getItem('myflix_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || config.geminiApiKey || "",
   setGeminiKey: (key: string) => {
     set({ geminiKey: key });
     localStorage.setItem('myflix_gemini_key', key);
-  },
-
-  aiProvider: (localStorage.getItem('myflix_ai_provider') as 'gemini' | 'openai') || 'gemini',
-  setAiProvider: (provider: 'gemini' | 'openai') => {
-    set({ aiProvider: provider });
-    localStorage.setItem('myflix_ai_provider', provider);
   },
 
   isSettingsOpen: false,
