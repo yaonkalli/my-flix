@@ -1,19 +1,23 @@
 
-// [AI UPDATE] Page Studio - Intégration IA Avancée (Refactorisé)
-// Utilisation du nouveau service unifié analyzeMedia
+// [AI UPDATE] Page Studio - Intégration IA Avancée
+// Utilisation de Gemini 2.0 Flash pour l'analyse visuelle et métadonnées
 
 import React, { useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import {
-   Sparkles, Trash2, Loader2, Upload, X, Music, Film, RefreshCcw, ArrowRight, AlertTriangle, Layers, Zap, Camera
+   Sparkles, Trash2, Loader2, Upload, X, Music, Film, RefreshCcw, ArrowRight, AlertTriangle, Edit3, Layers, Zap, User, Mic2, ArrowLeft, Camera
 } from 'lucide-react';
 import { useStore } from '../services/store';
 import { Link } from 'react-router-dom';
-import { analyzeMedia, generateJSON, AIError } from '../services/ai';
+import { OpenAI } from 'openai';
+import { callGemini } from '../services/ai';
 import { Movie, MediaType } from '../types';
+// import * as mm from 'music-metadata-browser';
+
+import { config } from '../config';
 
 const Studio: React.FC = () => {
-   const { addCustomMedia, customContent, removeCustomMedia, geminiKey, setSettingsOpen } = useStore();
+   const { addCustomMedia, customContent, removeCustomMedia, openaiKey, geminiKey, aiProvider } = useStore();
    const [analyzing, setAnalyzing] = useState(false);
    const [dragActive, setDragActive] = useState(false);
    const [status, setStatus] = useState<string>('');
@@ -24,6 +28,13 @@ const Studio: React.FC = () => {
    const fileInputRef = useRef<HTMLInputElement>(null);
    const processingRef = useRef(false);
    const aiSelectionInProgressRef = useRef(false);
+
+   const getAIInstance = () => {
+      if (aiProvider === 'openai') {
+         return openaiKey ? new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true, maxRetries: 0 }) : null;
+      }
+      return null;
+   };
 
    const handleDrag = (e: React.DragEvent) => {
       e.preventDefault();
@@ -43,6 +54,7 @@ const Studio: React.FC = () => {
 
          video.onloadedmetadata = async () => {
             const duration = video.duration;
+            // Capture frames at specific intervals: 10%, 20%... 80%
             const timestamps = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8].map(p => p * duration);
 
             for (const time of timestamps) {
@@ -77,20 +89,67 @@ const Studio: React.FC = () => {
 
    const pickBestCoverWithAI = async (currentCandidates: string[] = candidates) => {
       if (!currentCandidates.length) return;
-      if (aiSelectionInProgressRef.current) return;
+
+      // Protection anti-spam: ignorer si une sélection IA est déjà en cours
+      if (aiSelectionInProgressRef.current) {
+         console.log('Sélection IA déjà en cours, requête ignorée');
+         return;
+      }
 
       aiSelectionInProgressRef.current = true;
       setStatus('Analyse IA Best Shot...');
+      const hasAI = aiProvider === 'openai' ? !!openaiKey : !!geminiKey;
+      if (!hasAI) {
+         aiSelectionInProgressRef.current = false;
+         return;
+      }
+
+      const ai = getAIInstance();
 
       try {
-         const prompt = "Analyze these images. Return ONLY a JSON: { \"bestIndex\": number } for the best cinematic frame. No markdown.";
+         if (aiProvider === 'openai' && ai instanceof OpenAI) {
+            const response = await ai.chat.completions.create({
+               model: "gpt-4o-mini",
+               messages: [
+                  {
+                     role: "system",
+                     content: "Analyze these frames from a video. Pick the single most iconic, sharp, and high-quality frame to use as a movie poster. Avoid blurry or generic frames. Return ONLY a JSON object: { \"bestIndex\": number }."
+                  },
+                  {
+                     role: "user",
+                     content: [
+                        ...currentCandidates.map((base64, idx) => ({
+                           type: "image_url" as const,
+                           image_url: { url: base64, detail: "low" as const }
+                        })),
+                        { type: "text", text: "Which frame index (0-7) is the best cinematic cover?" }
+                     ]
+                  }
+               ],
+               response_format: { type: "json_object" }
+            });
 
-         // Use analyzeMedia which supports images
-         const data = await analyzeMedia(geminiKey, prompt, currentCandidates);
+            const data = JSON.parse(response.choices[0].message.content || '{"bestIndex": 0}');
+            const bestIndex = (typeof data.bestIndex === 'number') ? data.bestIndex : 0;
+            if (currentCandidates[bestIndex]) {
+               setPendingMedia(prev => prev ? ({ ...prev, thumbnailUrl: currentCandidates[bestIndex], backdropUrl: currentCandidates[bestIndex] }) : prev);
+            }
+         } else {
+            console.log("Studio Gemini Selection triggered");
+            const imageParts = currentCandidates.map(base64 => ({
+               inlineData: { data: base64.split(',')[1], mimeType: "image/jpeg" }
+            }));
+            // Pass parts directly. callGemini is now smart enough to wrap them in a User Content object.
+            const text = await callGemini(geminiKey || '', [
+               ...imageParts,
+               "Analyze these images. Return ONLY a JSON: { \"bestIndex\": number } for the best cinematic frame. No markdown."
+            ], { model: "gemini-2.0-flash", isJson: true }); // Updated model name to stable version
 
-         const bestIndex = (typeof data?.bestIndex === 'number') ? data.bestIndex : 0;
-         if (currentCandidates[bestIndex]) {
-            setPendingMedia(prev => prev ? ({ ...prev, thumbnailUrl: currentCandidates[bestIndex], backdropUrl: currentCandidates[bestIndex] }) : prev);
+            const data = JSON.parse(text);
+            const bestIndex = (typeof data.bestIndex === 'number') ? data.bestIndex : 0;
+            if (currentCandidates[bestIndex]) {
+               setPendingMedia(prev => prev ? ({ ...prev, thumbnailUrl: currentCandidates[bestIndex], backdropUrl: currentCandidates[bestIndex] }) : prev);
+            }
          }
       } catch (err) {
          console.error("AI Selection failed", err);
@@ -98,6 +157,10 @@ const Studio: React.FC = () => {
          setStatus('');
          aiSelectionInProgressRef.current = false;
       }
+   }
+
+   const extractAudioCover = async (file: File): Promise<string | null> => {
+      return null;
    }
 
    const processFile = async (file: File) => {
@@ -108,31 +171,69 @@ const Studio: React.FC = () => {
       setCandidates([]);
       setStatus('Analyse Expert...');
 
-      // 1. Extract Frames if video
+      // 1. Extract Frames if video or Cover if audio
       let extractedCandidates: string[] = [];
       if (file.type.startsWith('video/') || file.name.toLowerCase().endsWith('.avi')) {
          setStatus('Détection des moments forts...');
          extractedCandidates = await extractFrames(file, 8);
          setCandidates(extractedCandidates);
+      } else if (file.type.startsWith('audio/')) {
+         setStatus('Analyse Audio...');
+         // Temporarily disabled to fix build/AI issues
+         // const audioCover = await extractAudioCover(file);
+         // if (audioCover) {
+         //    extractedCandidates = [audioCover];
+         //    setCandidates([audioCover]);
+         // }
       }
 
+      // Keep track of the current file for rescan
       (window as any)._currentStudioFile = file;
+      const hasAI = aiProvider === 'openai' ? !!openaiKey : !!geminiKey;
+
+      if (!hasAI) {
+         fallbackMaster(file, extractedCandidates[0] || '');
+         return;
+      }
+
+      const ai = getAIInstance();
 
       try {
-         const prompt = `Tu es un expert en cinéma. Analyse "${file.name}".
+         let data: any = {};
+         if (aiProvider === 'openai' && ai instanceof OpenAI) {
+            const response = await ai.chat.completions.create({
+               model: "gpt-4o-mini",
+               messages: [
+                  {
+                     role: "system",
+                     content: "Tu es un expert en cinéma. Analyse le média et retourne un JSON détaillé EN FRANÇAIS. IMPORTANT: Si tu ne reconnais pas ce contenu comme une œuvre publique commerciale, décris uniquement ce que tu vois de manière factuelle sans inventer de métadonnées (acteurs, pitch fictionnel). Champ 'type': 'movie', 'series', 'music'. Champ 'rating': '16+', 'Tous', '12+'. Ajoute 'recommendationReason' (phrase commençant par 'Parce que vous aimez...'). Si film/musique, ajoute 'chapters' [{time_en_secondes, title}]. Si série, ajoute 'seasons' [{number, episodes: [{number, title, description, duration, chapters: [{time, title}]}]}]"
+                  },
+                  {
+                     role: "user", content: [
+                        { type: "text", text: `Fichier: ${file.name}. Retourne JSON: {title, artist, year, genre, rating, type, posterQuery, backdropQuery, description, recommendationReason, chapters, seasons}` },
+                        ...extractedCandidates.slice(0, 4).map(b => ({ type: "image_url" as const, image_url: { url: b, detail: "low" as const } }))
+                     ]
+                  }
+               ],
+               response_format: { type: "json_object" }
+            });
+            data = JSON.parse(response.choices[0].message.content || '{}');
+         } else {
+            console.log("Studio Gemini Metadata Analysis triggered");
+            const promptParts: any[] = [`Tu es un expert en cinéma. Analyse "${file.name}".
             IMPORTANT: Si tu ne reconnais pas ce contenu comme une œuvre commerciale publique (film, série, musique connue), décris UNIQUEMENT ce que tu vois visuellement de manière factuelle. N'invente jamais d'acteurs, de réalisateurs ou d'années si c'est un contenu personnel. 
             Réponds EN FRANÇAIS. 
             Si c'est un contenu privé, utilise 'type': 'movie' par défaut et 'genre': ['Privé'].
             Si œuvre connue: Classifie 'movie', 'series', 'music' et ajoute 'recommendationReason'.
             Si film/musique, génère 'chapters' [{time (secondes), title}]. 
             Si série, génère 'seasons' [{number, episodes: [{number, title, description, duration, chapters: [{time, title}]}]}].
-            Retourne UNIQUEMENT un JSON: {title, artist, year, genre, rating, type, posterQuery, backdropQuery, description, recommendationReason, chapters, seasons}. Pas de markdown.`;
-
-         // Use the multimodal service
-         const imagesToAnalyze = extractedCandidates.slice(0, 4);
-         const data = await analyzeMedia(geminiKey, prompt, imagesToAnalyze);
-
-         if (!data) throw new Error("Analyse échouée");
+            Retourne UNIQUEMENT un JSON: {title, artist, year, genre, rating, type, posterQuery, backdropQuery, description, recommendationReason, chapters, seasons}. Pas de markdown.`];
+            if (extractedCandidates.length > 0) {
+               promptParts.push(...extractedCandidates.slice(0, 4).map(b => ({ inlineData: { data: b.split(',')[1], mimeType: "image/jpeg" } })));
+            }
+            const text = await callGemini(geminiKey || '', promptParts, { model: "gemini-2.0-flash", isJson: true }); // Updated model name to stable version
+            data = JSON.parse(text);
+         }
 
          const salt = Math.random().toString(36).substring(7);
          const getUnsplash = (q: string, s: string) => `https://images.unsplash.com/featured/${s}?${encodeURIComponent(q || 'cinema')},${salt}`;
@@ -158,6 +259,8 @@ const Studio: React.FC = () => {
             seasons: data.seasons
          });
 
+         // If we have candidates, let's auto-pick the best one in the background
+         // Augmenté le délai pour éviter le spam de requêtes
          if (extractedCandidates.length > 0) {
             setTimeout(() => pickBestCoverWithAI(extractedCandidates), 800);
          }
@@ -165,12 +268,7 @@ const Studio: React.FC = () => {
          setStatus('Master Prêt');
       } catch (err: any) {
          console.error("AI processing error:", err);
-         if (err instanceof AIError && err.code === "MYFLIX_CONFIG_REQUIRED") {
-             setSettingsOpen(true);
-             alert("Veuillez configurer votre clé API pour utiliser le Studio.");
-         } else if (err?.message?.includes('429')) {
-             setIsQuotaExceeded(true);
-         }
+         if (err?.status === 429 || err?.message?.includes('429')) setIsQuotaExceeded(true);
          fallbackMaster(file, extractedCandidates[0]);
       } finally {
          setAnalyzing(false);
@@ -211,6 +309,7 @@ const Studio: React.FC = () => {
       if (!file) return;
 
       setStatus('Nouveau Scan Aléatoire...');
+      // Use random offsets for rescan
       const duration = await new Promise<number>((res) => {
          const v = document.createElement('video');
          v.src = URL.createObjectURL(file);
@@ -244,6 +343,7 @@ const Studio: React.FC = () => {
 
       setCandidates(newFrames);
       setStatus('Nouveau Master prêt');
+      // Auto-repick
       pickBestCoverWithAI(newFrames);
    };
 
@@ -254,25 +354,28 @@ const Studio: React.FC = () => {
          <Navbar />
          <div className="pt-20 px-4 md:px-12 max-w-[1600px] mx-auto pb-20">
             {/* Clean Netflix-style Header */}
-            <header className="mb-8 pt-6">
-               <div className="flex items-center justify-between">
-                  <div>
-                     <div className="flex items-center gap-3 mb-2">
-                        <Link to="/browse" className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all border border-white/5 group">
-                           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                        </Link>
-                        <h1 className="text-3xl md:text-4xl font-bold italic tracking-tighter">Studio Master</h1>
-                     </div>
-                     <p className="text-sm text-gray-400">Importe et gère ton contenu personnel avec l'IA</p>
-                  </div>
+            <header className="mb-6 md:mb-10 pt-4 md:pt-6">
+               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
-                     <div className="bg-zinc-900/80 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-4 group">
-                        <div className="w-10 h-10 rounded-xl bg-netflix-red/10 flex items-center justify-center text-netflix-red group-hover:scale-110 transition-transform">
-                           <Layers size={20} />
+                     <Link to="/browse" className="w-10 h-10 md:w-12 md:h-12 bg-white/5 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 transition-all border border-white/5 active:scale-90">
+                        <ArrowLeft size={20} />
+                     </Link>
+                     <div>
+                        <h1 className="text-2xl md:text-5xl font-black italic tracking-tighter leading-none mb-2">Studio Master</h1>
+                        <p className="text-[10px] md:text-sm text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                           <Zap size={12} className="text-netflix-red" /> IA Creative Suite
+                        </p>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                     <div className="flex-1 md:flex-none bg-zinc-900/50 backdrop-blur-xl rounded-2xl px-5 py-3 border border-white/5 flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-netflix-red/10 flex items-center justify-center text-netflix-red">
+                           <Layers size={16} />
                         </div>
                         <div>
-                           <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mb-0.5">Bibliothèque</p>
-                           <p className="text-lg font-black text-white leading-none">{customContent.length} <span className="text-[10px] text-zinc-600">MÉDIAS</span></p>
+                           <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">Storage</p>
+                           <p className="text-sm font-black text-white">{customContent.length} <span className="text-[8px] text-zinc-700 italic">OFFLINE</span></p>
                         </div>
                      </div>
                   </div>
@@ -280,7 +383,7 @@ const Studio: React.FC = () => {
             </header>
 
             {/* Content Type Selector */}
-            <div className="flex gap-2 mb-8 bg-zinc-900/50 p-1.5 rounded-2xl w-fit border border-white/5">
+            <div className="flex md:inline-flex gap-1 mb-10 bg-black/40 p-1 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
                {[
                   { type: 'movie' as MediaType, label: 'Films', icon: Film },
                   { type: 'series' as MediaType, label: 'Séries', icon: Layers },
@@ -289,12 +392,12 @@ const Studio: React.FC = () => {
                   <button
                      key={type}
                      onClick={() => setSelectedType(type)}
-                     className={`px-8 py-3 rounded-xl text-sm font-black uppercase tracking-tighter transition-all flex items-center gap-3 ${selectedType === type
-                        ? 'bg-white text-black shadow-xl scale-105'
-                        : 'text-zinc-500 hover:text-white'
+                     className={`flex-1 md:flex-none px-6 md:px-10 py-3.5 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-3 ${selectedType === type
+                        ? 'bg-white text-black shadow-2xl scale-[1.02]'
+                        : 'text-zinc-600 hover:text-white hover:bg-white/5'
                         }`}
                   >
-                     <Icon size={18} />
+                     <Icon size={14} className={selectedType === type ? 'text-netflix-red' : ''} />
                      {label}
                   </button>
                ))}
@@ -307,7 +410,7 @@ const Studio: React.FC = () => {
                      <div
                         className={`relative bg-zinc-900/40 backdrop-blur-3xl rounded-[2.5rem] border-2 border-dashed transition-all duration-700 cursor-pointer group overflow-hidden ${dragActive ? 'border-netflix-red bg-netflix-red/10 scale-[1.02] shadow-[0_0_60px_rgba(229,9,20,0.2)]' : 'border-white/5 hover:border-white/20 hover:bg-white/5'
                            }`}
-                        style={{ minHeight: '500px' }}
+                        style={{ minHeight: window.innerWidth < 768 ? '350px' : '500px' }}
                         onDragOver={handleDrag}
                         onDragLeave={handleDrag}
                         onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }}
@@ -339,16 +442,16 @@ const Studio: React.FC = () => {
                         </div>
                      </div>
                   ) : (
-                     <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-[2.5rem] p-10 border border-white/5 shadow-[0_50px_100px_rgba(0,0,0,0.5)] animate-slide-up relative overflow-hidden group">
+                     <div className="bg-zinc-900/60 backdrop-blur-3xl rounded-[2.5rem] p-6 md:p-10 border border-white/5 shadow-[0_50px_100px_rgba(0,0,0,0.5)] animate-slide-up relative overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
                         <div className="relative z-10">
-                           <div className="flex items-center justify-between mb-10">
-                              <h3 className="text-2xl font-black italic tracking-tighter">Mastering Métadonnées</h3>
+                           <div className="flex items-center justify-between mb-8">
+                              <h3 className="text-xl md:text-2xl font-black italic tracking-tighter">Mastering Métadonnées</h3>
                               <button
                                  onClick={() => setPendingMedia(null)}
-                                 className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/10 transition-all border border-white/5"
+                                 className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/10 transition-all border border-white/5"
                               >
-                                 <X size={24} />
+                                 <X size={20} />
                               </button>
                            </div>
 
@@ -518,13 +621,13 @@ const Studio: React.FC = () => {
                         </div>
 
                         {/* Cover Selection System */}
-                        <div className="bg-zinc-900 rounded-[2.5rem] p-10 border border-zinc-800 shadow-2xl">
-                           <div className="flex items-center justify-between mb-10">
+                        <div className="bg-zinc-900 rounded-[2.5rem] p-6 md:p-10 border border-zinc-800 shadow-2xl">
+                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                               <div>
                                  <h3 className="text-2xl font-black italic tracking-tighter mb-1">Système de Cover Intelligent</h3>
                                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Sélectionnez le meilleur visuel pour votre bibliothèque</p>
                               </div>
-                              <div className="flex gap-4">
+                              <div className="flex flex-wrap gap-2 md:gap-4">
                                  <input
                                     type="file"
                                     id="custom-cover"
@@ -540,29 +643,29 @@ const Studio: React.FC = () => {
                                  />
                                  <button
                                     onClick={() => document.getElementById('custom-cover')?.click()}
-                                    className="bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-black uppercase tracking-widest py-3 px-6 rounded-2xl transition-all flex items-center gap-3 border border-white/5 active:scale-95"
+                                    className="flex-1 md:flex-none bg-zinc-800 hover:bg-zinc-700 text-white text-[9px] font-black uppercase tracking-widest py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5 active:scale-95"
                                  >
-                                    <Upload size={14} /> Upload Manuel
+                                    <Upload size={14} /> Upload
                                  </button>
                                  <button
                                     onClick={handleRescan}
-                                    className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[10px] font-black uppercase tracking-widest py-3 px-6 rounded-2xl transition-all flex items-center gap-3 border border-white/5 active:scale-95"
+                                    className="flex-1 md:flex-none bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[9px] font-black uppercase tracking-widest py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/5 active:scale-95"
                                  >
-                                    <Camera size={14} /> Scanner Auto
+                                    <Camera size={14} /> Scan
                                  </button>
                                  <button
                                     onClick={() => pickBestCoverWithAI()}
                                     disabled={status.includes('IA')}
-                                    className="bg-white text-black hover:bg-netflix-red hover:text-white text-[10px] font-black uppercase tracking-widest py-3 px-6 rounded-2xl transition-all flex items-center gap-3 shadow-2xl active:scale-95 disabled:opacity-50"
+                                    className="w-full md:w-auto bg-white text-black hover:bg-netflix-red hover:text-white text-[10px] font-black uppercase tracking-widest py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95 disabled:opacity-50"
                                  >
                                     <Sparkles size={14} className={status.includes('IA') ? 'animate-spin' : ''} />
-                                    {status.includes('IA') ? 'Analyse...' : 'Suggestion IA'}
+                                    {status.includes('IA') ? 'Analyse IA...' : 'Suggestion IA'}
                                  </button>
                               </div>
                            </div>
 
                            {candidates.length > 0 ? (
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                                  {candidates.map((img, i) => (
                                     <div
                                        key={i}
@@ -571,11 +674,11 @@ const Studio: React.FC = () => {
                                     >
                                        <img src={img} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={`Frame ${i}`} />
                                        <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${pendingMedia.thumbnailUrl === img ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-500 ${pendingMedia.thumbnailUrl === img ? 'bg-netflix-red scale-110' : 'bg-white/20 backdrop-blur-md rotate-12 group-hover:rotate-0'}`}>
-                                             <Sparkles size={20} className="text-white" />
+                                          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-transform duration-500 shadow-2xl ${pendingMedia.thumbnailUrl === img ? 'bg-netflix-red scale-110' : 'bg-white/20 backdrop-blur-md rotate-12 group-hover:rotate-0'}`}>
+                                             <Sparkles size={18} className="text-white" />
                                           </div>
                                        </div>
-                                       <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/80 backdrop-blur-xl rounded-lg text-[10px] font-black uppercase tracking-tighter text-white/70">
+                                       <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 px-2 md:px-3 py-1 bg-black/80 backdrop-blur-xl rounded-lg text-[8px] md:text-[10px] font-black uppercase tracking-widest text-white/70">
                                           Capture #{i + 1}
                                        </div>
                                     </div>
