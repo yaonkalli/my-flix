@@ -1,11 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { MessageSquare, Send, X, Bot, Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import { OpenAI } from 'openai';
-import { callGemini } from '../services/ai';
+import React, { useState } from 'react';
+import { MessageSquare, Send, X, Bot, Loader2, AlertCircle } from 'lucide-react';
+import { generateCompletion, AIError } from '../services/ai';
 import { useStore } from '../services/store';
-
-import { config } from '../config';
 
 const AIChat: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +11,7 @@ const AIChat: React.FC = () => {
     { role: 'assistant', text: 'Salut ! Je suis ton assistant Myflix. Dis-moi ce que tu veux regarder.' }
   ]);
   const [loading, setLoading] = useState(false);
-  const { customContent, openaiKey, geminiKey, aiProvider, activeTrack } = useStore();
+  const { customContent, geminiKey, activeTrack, setSettingsOpen } = useStore();
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
@@ -25,25 +22,7 @@ const AIChat: React.FC = () => {
     setLoading(true);
 
     try {
-      if (aiProvider === 'openai') {
-        if (!openaiKey || openaiKey === "sk-proj-DEMO") {
-          throw new Error("Clé OpenAI non configurée.");
-        }
-        const openai = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true, maxRetries: 0 });
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: `You are Myflix Concierge. Library contains: ${customContent.map(m => m.title).join(', ')}. Respond in French, concisely.` },
-            { role: "user", content: userMsg }
-          ],
-        });
-        const responseText = completion.choices[0].message.content || "Erreur AI.";
-        setMessages(prev => [...prev, { role: 'assistant', text: responseText }]);
-      } else {
-        // Protocole Gemini: Flash pour réponses rapides
-        const text = await callGemini(geminiKey, userMsg, {
-          model: 'gemini-2.0-flash',
-          systemInstruction: `IDENTITÉ : Tu es le Concierge Myflix, assistant IA premium spécialisé dans les recommandations de contenu.
+        const systemPrompt = `IDENTITÉ : Tu es le Concierge Myflix, assistant IA premium spécialisé dans les recommandations de contenu.
 
 BIBLIOTHÈQUE DISPONIBLE : ${customContent.map(m => `"${m.title}" (${m.type})`).join(', ') || 'Aucun contenu pour le moment'}.
 
@@ -58,16 +37,25 @@ RÈGLES STRICTES :
 COMPORTEMENT :
 - Pour une recherche : Analyse l'ambiance/thème demandé et recommande le meilleur match
 - Pour une question générale : Guide l'utilisateur vers les fonctionnalités Myflix
-- Toujours terminer par une suggestion d'action concrète`
-        });
+- Toujours terminer par une suggestion d'action concrète`;
+
+        const text = await generateCompletion(geminiKey, userMsg, systemPrompt);
         setMessages(prev => [...prev, { role: 'assistant', text }]);
-      }
+
     } catch (err: any) {
       console.error("AI Error:", err);
-      setMessages(prev => [...prev, {
-        role: 'error',
-        text: err?.message || "Problème de connexion AI."
-      }]);
+      if (err instanceof AIError && err.code === "MYFLIX_CONFIG_REQUIRED") {
+        setMessages(prev => [...prev, {
+          role: 'error',
+          text: "Clé API manquante ou invalide. Veuillez configurer l'IA."
+        }]);
+        setSettingsOpen(true);
+      } else {
+        setMessages(prev => [...prev, {
+          role: 'error',
+          text: err?.message || "Problème de connexion AI."
+        }]);
+      }
     } finally {
       setLoading(false);
     }

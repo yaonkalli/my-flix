@@ -3,7 +3,7 @@
 // Refonte complète : Google GenAI SDK (Gemini) Uniquement
 // Gestion simplifiée et robuste des erreurs et des modèles
 
-import { GoogleGenAI, SchemaType } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 // --- Constants & Types ---
 
@@ -46,7 +46,12 @@ export const generateCompletion = async (apiKey: string, prompt: string, systemI
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
-        const text = result.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+        // The SDK structure can be tricky.
+        // Usually: result.text() is a helper if available, or access candidates.
+        // Let's use 'any' to bypass temporary SDK type definition mismatches while ensuring the payload hits the API correctly.
+        const response: any = result;
+        const text = response.text ? response.text() : response.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+
         if (!text) throw new Error("Réponse vide de l'IA");
 
         return text;
@@ -73,7 +78,9 @@ export const generateJSON = async (apiKey: string, prompt: string, schema?: any)
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
-        const text = result.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const response: any = result;
+        const text = response.text ? response.text() : response.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+
         if (!text) throw new Error("Réponse JSON vide");
 
         // Clean markdown code blocks if present (standard Gemini behavior)
@@ -118,7 +125,9 @@ export const analyzeMedia = async (apiKey: string, prompt: string, imagesBase64:
             contents: [{ role: 'user', parts: parts }]
         });
 
-        const text = result.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const response: any = result;
+        const text = response.text ? response.text() : response.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+
         if (!text) throw new Error("Réponse analyse vide");
 
         const cleanJson = text.replace(/```json|```/g, '').trim();
